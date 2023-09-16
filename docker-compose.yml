@@ -1,0 +1,48 @@
+version: '3.8'
+
+services:
+  # Spring Boot App
+  movie-api:
+    image: movieapp:latest
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://db:5432/moviedb
+      - SPRING_DATASOURCE_USERNAME=postgres
+      - SPRING_DATASOURCE_PASSWORD=admin
+    networks:
+      - movie-network
+    depends_on:
+      - db
+
+  # PostgreSQL Database
+  db:
+    image: postgres:latest
+    environment:
+      - POSTGRES_DB=moviedb
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=admin
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    networks:
+      - movie-network
+
+  # Nginx as a Reverse Proxy
+  nginx:
+    image: nginx:latest
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+    ports:
+      - "8080:8080"
+    networks:
+      - movie-network
+    depends_on:
+      - movie-api
+
+networks:
+  movie-network:
+    driver: bridge
+
+volumes:
+  pgdata:
